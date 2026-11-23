@@ -5,12 +5,12 @@
 
 工程映射：密钥机密托管。
 
-边界：本件为算子骨架 v0——接口先立、实现随进化轮补齐；遵循元法第四条「只增不覆盖」，
+边界：本件为算子 v1——骨架桩已按命名映射补齐实现；遵循元法第四条「只增不覆盖」，
 方法只增不改名不删，行为变更走新版本；凭据不入档，宣称与事实分离。
 """
 
 class Jiandu:
-    """缄椟（JIANDU）算子骨架 v0。"""
+    """缄椟（JIANDU）算子 v1。"""
 
     ANCHOR = "Ω₀⊂⊙∞⊂Ω｜DID-BR-000002"
     CODE = "JIANDU"
@@ -18,6 +18,8 @@ class Jiandu:
     def __init__(self, config=None):
         self.config = dict(config or {})
         self.events = []  # 只增不覆盖：会话内事件留痕
+        self.vault = {}
+        self._seq = 0
 
     def describe(self):
         """构件名帖：名、代号、职责、铭文、体系锚。"""
@@ -31,9 +33,20 @@ class Jiandu:
         }
 
     def escrow(self, key_ref):
-        """缄封锁固：机密托管，返回执据（凭据本体不入档）（骨架桩：实现随进化轮补齐）。"""
-        raise NotImplementedError("JIANDU.escrow 骨架桩，候进化轮补齐")
+        """缄封锁固：机密托管，返回执据（凭据本体不入档）。"""
+        import hashlib
+        self._seq += 1
+        handle = hashlib.sha256(("%d|%s" % (self._seq, key_ref)).encode()).hexdigest()[:32]
+        self.vault[handle] = {"ref": str(key_ref),
+                              "fingerprint": hashlib.sha256(str(key_ref).encode()).hexdigest()[:16]}
+        self.events.append({"event": "escrow", "handle": handle})
+        return handle
 
     def release(self, handle, auth):
-        """非时不启：凭授权取用托管件（骨架桩：实现随进化轮补齐）。"""
-        raise NotImplementedError("JIANDU.release 骨架桩，候进化轮补齐")
+        """非时不启：凭授权取用托管件。"""
+        if handle not in self.vault:
+            raise KeyError("无此执据： %s" % handle)
+        if not auth or auth != self.config.get("auth"):
+            raise PermissionError("授权不备，椟不开封")
+        self.events.append({"event": "release", "handle": handle})
+        return self.vault[handle]["ref"]
